@@ -9,6 +9,7 @@ import com.steve.secure_auth.repository.RoleRepository;
 import com.steve.secure_auth.repository.UserRepository;
 import com.steve.secure_auth.repository.VerificationTokenRepository;
 import com.steve.secure_auth.util.JwtProvider;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,14 +22,27 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 @Service
 public class AuthService {
 
-    private final UserRepository userRepository;
 
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository, VerificationTokenRepository verificationTokenRepository, PasswordEncoder passwordEncoder, EmailService emailService, JwtProvider jwtService,
-                       RefreshTokenService refreshTokenService, AuthenticationManager authenticationManager) {
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final JwtProvider jwtService;
+    private final RefreshTokenService refreshTokenService;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthService(UserRepository userRepository,
+                       RoleRepository roleRepository,
+                       VerificationTokenRepository verificationTokenRepository,
+                       PasswordEncoder passwordEncoder,
+                       EmailService emailService,
+                       JwtProvider jwtService,
+                       RefreshTokenService refreshTokenService,
+                       AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.verificationTokenRepository = verificationTokenRepository;
@@ -39,19 +53,8 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
     }
 
-    private final RoleRepository roleRepository;
-    private final VerificationTokenRepository verificationTokenRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
-
-    // ⬇️ new dependencies for login/refresh/logout
-    private final JwtProvider jwtService;
-    private final RefreshTokenService refreshTokenService;
-    private final AuthenticationManager authenticationManager;
-
-    // ================== REGISTER ==================
+    @Transactional
     public void register(RegisterRequest request) {
-        // Create user (disabled until email verification)
         User user = new User();
         user.setFirstname(request.getFirstName());
         user.setLastname(request.getLastName());
@@ -61,24 +64,19 @@ public class AuthService {
         user.setProfileImage(request.getProfileImage());
         user.setEnabled(false);
 
-        // Assign default role
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("ROLE_USER not found"));
         user.getRoles().add(userRole);
-
         userRepository.save(user);
 
-        // Generate email verification token
         String token = UUID.randomUUID().toString();
         Instant expiryDate = Instant.now().plus(24, ChronoUnit.HOURS);
         VerificationToken verificationToken = new VerificationToken(token, user, expiryDate);
         verificationTokenRepository.save(verificationToken);
 
-        // Send verification email
         emailService.sendVerificationEmail(user, token);
     }
 
-    // ================== LOGIN ==================
     public AuthenticationResponse login(AuthRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -94,19 +92,21 @@ public class AuthService {
         String accessToken = jwtService.generateToken(user.getEmail());
         String refreshToken = refreshTokenService.create(user).getToken();
 
-        UserInfo userInfo = new UserInfo(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstname(),
-                user.getLastname(),
-                user.getProfileImage(),
-                user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
-        );
-
-        return new AuthenticationResponse(accessToken, refreshToken, userInfo);
+        // ✅ Unified to builder style (consistent with refresh())
+        return AuthenticationResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .user(AuthenticationResponse.UserInfo.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstname())
+                        .lastName(user.getLastname())
+                        .profileImage(user.getProfileImage())
+                        .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                        .build())
+                .build();
     }
 
-    // ================== REFRESH ==================
     public AuthenticationResponse refresh(RefreshRequest request) {
         var rt = refreshTokenService.validate(request.getRefreshToken());
         var user = rt.getUser();
@@ -127,7 +127,6 @@ public class AuthService {
                 .build();
     }
 
-    // ================== LOGOUT ==================
     public Map<String, String> logout(String email, String refreshToken) {
         userRepository.findByEmail(email).ifPresent(user -> {
             if (refreshToken != null && !refreshToken.isBlank()) {
@@ -137,5 +136,27 @@ public class AuthService {
             }
         });
         return Map.of("message", "Logged out");
+    }
+
+    @Transactional
+    public void verifyEmail(String token) {
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or unrecognized token"));
+
+        if (verificationToken.getExpiryDate().isBefore(Instant.now())) {
+            verificationTokenRepository.delete(verificationToken); // clean up expired token
+            throw new IllegalStateException("Verification token has expired. Please register again.");
+        }
+
+        User user = verificationToken.getUser();
+
+        if (user.isEnabled()) {
+            throw new IllegalStateException("Account is already verified.");  // ✅ guard against double-verification
+        }
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        verificationTokenRepository.delete(verificationToken); // ✅ one-time use — delete after success
     }
 }

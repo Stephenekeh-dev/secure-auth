@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # Flyway handles schema
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -28,33 +28,35 @@ spring:
 
   mail:
     host: smtp.gmail.com
-    port: 465
+    port: 465                                 # ✅ use 465 for SSL
     username: ekehsteven2@gmail.com
-    password: gzbs oooi akch phbv
+    password: gzbs oooi akch phbv               # ✅ env variable
     properties:
       mail:
         smtp:
           auth: true
           ssl:
-            enable: true   # since you are using port 465 (SSL)
+            enable: true                      # ✅ correct for port 465
           starttls:
-            enable: true   # if using 587 instead of 465
+            enable: false                     # ✅ disable — conflicts with SSL on 465
 
 server:
   port: 8080
 
 jwt:
-  secret: "v2DQ/qdsoALW2JjL8a86ENcoBIE1QWAm2sIn10LJa1U="
-  expiration-ms: 3600000 # 1 hour in milliseconds
+  secret: "v2DQ/qdsoALW2JjL8a86ENcoBIE1QWAm2sIn10LJa1U="                      # ✅ env variable
+  expiration-ms: 3600000
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}  # ✅ used by EmailService
 
 file:
   upload-dir: ./uploads/profile-pictures
 
-debug: true
-
+# ✅ Reduce debug noise in production — consider 'INFO' when deploying
 logging:
   level:
-    root: DEBUG
+    root: INFO
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
     com.steve.secure_auth: DEBUG

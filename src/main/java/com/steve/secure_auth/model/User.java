@@ -1,6 +1,8 @@
 package com.steve.secure_auth.model;
 
 import jakarta.persistence.*;
+
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,10 +17,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
+    @Column(name = "first_name", nullable = false)
     private String firstname;
 
-    @Column(nullable = false)
+    @Column(name = "last_name", nullable = false)
     private String lastname;
 
     @Column(nullable = false, unique = true)
@@ -32,6 +34,22 @@ public class User {
 
     @Column(nullable = false)
     private boolean enabled = false;
+
+
+    @Column(name = "account_non_locked", nullable = false)
+    private boolean accountNonLocked = true;
+
+    @Column(name = "account_non_expired", nullable = false)
+    private boolean accountNonExpired = true;
+
+    @Column(name = "credentials_non_expired", nullable = false)
+    private boolean credentialsNonExpired = true;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt = Instant.now();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -128,5 +146,30 @@ public class User {
     public void removeRole(Role role) {
         this.roles.remove(role);
         role.getUsers().remove(this);  // Update the reverse side of the relationship
+    }
+
+    public boolean isAccountNonLocked() { return accountNonLocked; }
+    public void setAccountNonLocked(boolean accountNonLocked) { this.accountNonLocked = accountNonLocked; }
+
+    public boolean isAccountNonExpired() { return accountNonExpired; }
+    public void setAccountNonExpired(boolean accountNonExpired) { this.accountNonExpired = accountNonExpired; }
+
+    public boolean isCredentialsNonExpired() { return credentialsNonExpired; }
+    public void setCredentialsNonExpired(boolean credentialsNonExpired) {
+        this.credentialsNonExpired = credentialsNonExpired;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

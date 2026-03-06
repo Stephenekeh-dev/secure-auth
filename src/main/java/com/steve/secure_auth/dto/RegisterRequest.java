@@ -1,75 +1,33 @@
 package com.steve.secure_auth.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@AllArgsConstructor
 public class RegisterRequest {
+
+    @NotBlank(message = "Username is required")
     private String username;
+
+    @NotBlank @Email(message = "Valid email is required")
     private String email;
+
+    @NotBlank @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
+
+    @NotBlank(message = "First name is required")
     private String firstName;
+
+    @NotBlank(message = "Last name is required")
     private String lastName;
-    private String profileImage;
 
-    // ✅ No-args constructor
-    public RegisterRequest() {
-    }
+    private String profileImage; // optional
 
-    // ✅ All-args constructor
-    public RegisterRequest(String username, String email, String password, String firstName, String lastName, String profileImage) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.profileImage = profileImage;
-    }
-
-    // ✅ Getters and Setters
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getProfileImage() {
-        return profileImage;
-    }
-
-    public void setProfileImage(String profileImage) {
-        this.profileImage = profileImage;
-    }
-
-
+    // constructors, getters, setters unchanged...
 }

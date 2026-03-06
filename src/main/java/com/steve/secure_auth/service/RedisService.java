@@ -14,11 +14,17 @@ public class RedisService {
         this.redisTemplate = redisTemplate;
     }
 
-    public void saveOtp(String key, long ttlSeconds) {
-        redisTemplate.opsForValue().set(key, key, ttlSeconds, TimeUnit.SECONDS);
+    //
+    public void saveOtp(String key, String value, long ttlSeconds) {
+        redisTemplate.opsForValue().set(key, value, ttlSeconds, TimeUnit.SECONDS);
     }
 
     public String getOtp(String key) {
         return redisTemplate.opsForValue().get(key);
+    }
+
+
+    public void deleteOtp(String key) {
+        redisTemplate.delete(key);
     }
 }

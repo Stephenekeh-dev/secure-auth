@@ -4,22 +4,24 @@ package com.steve.secure_auth.service;
 import com.steve.secure_auth.model.RefreshToken;
 import com.steve.secure_auth.model.User;
 import com.steve.secure_auth.repository.RefreshTokenRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
-
 @Service
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
-     public RefreshTokenService(RefreshTokenRepository refreshTokenRepository){
-         this.refreshTokenRepository=refreshTokenRepository;
-     }
+
+    public RefreshTokenService(RefreshTokenRepository refreshTokenRepository) {
+        this.refreshTokenRepository = refreshTokenRepository;
+    }
+
+    @Transactional  // ✅ ADD — deleteByUser requires transaction
     public RefreshToken create(User user) {
-        // delete existing tokens for this user (optional policy)
         refreshTokenRepository.deleteByUser(user);
 
         RefreshToken rt = new RefreshToken();
@@ -39,6 +41,7 @@ public class RefreshTokenService {
         return rt;
     }
 
+    @Transactional
     public void revokeByUser(User user) {
         refreshTokenRepository.deleteByUser(user);
     }
