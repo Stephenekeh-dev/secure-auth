@@ -11,6 +11,7 @@ public class RedisService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public RedisService(RedisTemplate<String, String> redisTemplate) {
+
         this.redisTemplate = redisTemplate;
     }
 
@@ -20,11 +21,13 @@ public class RedisService {
     }
 
     public String getOtp(String key) {
+
         return redisTemplate.opsForValue().get(key);
     }
 
 
     public void deleteOtp(String key) {
+
         redisTemplate.delete(key);
     }
 }

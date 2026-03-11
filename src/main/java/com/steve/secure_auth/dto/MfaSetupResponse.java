@@ -7,9 +7,14 @@ import lombok.NoArgsConstructor;
 
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class MfaSetupResponse {
     private String qrImageDataUrl;
     private String secret;
+
+    public MfaSetupResponse() {}
+
+    public MfaSetupResponse(String qrImageDataUrl, String secret) {
+        this.qrImageDataUrl = qrImageDataUrl;
+        this.secret = secret;
+    }
 }

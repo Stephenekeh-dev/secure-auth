@@ -19,11 +19,11 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    // ✅ Fields before constructor
+    // Fields before constructor
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
-        this.authService = authService;  // ✅ verifyEmail logic moved to AuthService
+        this.authService = authService;  // verifyEmail logic moved to AuthService
     }
 
     @PostMapping("/register")
@@ -50,14 +50,21 @@ public class AuthController {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
-    // ✅ email extracted from SecurityContext — not from request param
+    //  email extracted from SecurityContext — not from request param
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @RequestParam(required = false) String refreshToken,
-            Authentication authentication  // injected by Spring from JWT context
+            @RequestParam(required = false) String email,  // ✅ fallback for testing
+            Authentication authentication
     ) {
-        String email = authentication.getName();
-        return ResponseEntity.ok(authService.logout(email, refreshToken));
+        String resolvedEmail = (authentication != null)
+                ? authentication.getName()
+                : email;
+
+        if (resolvedEmail == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Not authenticated"));
+        }
+        return ResponseEntity.ok(authService.logout(resolvedEmail, refreshToken));
     }
 
     @PostMapping("/forgot-password")

@@ -22,6 +22,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 @Service
 public class AuthService {
 
@@ -92,7 +93,7 @@ public class AuthService {
         String accessToken = jwtService.generateToken(user.getEmail());
         String refreshToken = refreshTokenService.create(user).getToken();
 
-        // ✅ Unified to builder style (consistent with refresh())
+        //  Unified to builder style (consistent with refresh())
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -151,12 +152,12 @@ public class AuthService {
         User user = verificationToken.getUser();
 
         if (user.isEnabled()) {
-            throw new IllegalStateException("Account is already verified.");  // ✅ guard against double-verification
+            throw new IllegalStateException("Account is already verified.");  //  guard against double-verification
         }
 
         user.setEnabled(true);
         userRepository.save(user);
 
-        verificationTokenRepository.delete(verificationToken); // ✅ one-time use — delete after success
+        verificationTokenRepository.delete(verificationToken); //  one-time use — delete after success
     }
 }

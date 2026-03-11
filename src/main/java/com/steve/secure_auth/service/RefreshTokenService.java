@@ -20,7 +20,7 @@ public class RefreshTokenService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
-    @Transactional  // ✅ ADD — deleteByUser requires transaction
+    @Transactional  //  ADD — deleteByUser requires transaction
     public RefreshToken create(User user) {
         refreshTokenRepository.deleteByUser(user);
 
