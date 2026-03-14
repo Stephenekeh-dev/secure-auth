@@ -158,7 +158,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login — returns AuthenticationResponse with tokens and user info")
     void login_validCredentials_returnsAuthResponse() {
-        AuthRequest request = new AuthRequest("steve@example.com", "rawPassword", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "rawPassword");
         when(userRepository.findByEmail("steve@example.com")).thenReturn(Optional.of(testUser));
         when(jwtProvider.generateToken("steve@example.com")).thenReturn("access-token");
         RefreshToken rt = buildRefreshToken("refresh-token");
@@ -174,7 +174,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login — calls authenticationManager.authenticate")
     void login_callsAuthenticationManager() {
-        AuthRequest request = new AuthRequest("steve@example.com", "rawPassword", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "rawPassword");
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(testUser));
         when(jwtProvider.generateToken(any())).thenReturn("token");
         when(refreshTokenService.create(any())).thenReturn(buildRefreshToken("rt"));
@@ -189,7 +189,7 @@ class AuthServiceTest {
     @DisplayName("login — throws IllegalStateException when user is not enabled")
     void login_userNotEnabled_throwsException() {
         testUser.setEnabled(false);
-        AuthRequest request = new AuthRequest("steve@example.com", "rawPassword", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "rawPassword");
         when(userRepository.findByEmail("steve@example.com")).thenReturn(Optional.of(testUser));
 
         assertThatThrownBy(() -> authService.login(request))
@@ -200,7 +200,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login — throws UsernameNotFoundException when user not found")
     void login_userNotFound_throwsException() {
-        AuthRequest request = new AuthRequest("ghost@example.com", "pass", null);
+        AuthRequest request = new AuthRequest("ghost@example.com", "pass");
         when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.login(request))
@@ -210,7 +210,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login — throws BadCredentialsException when password is wrong")
     void login_wrongPassword_throwsException() {
-        AuthRequest request = new AuthRequest("steve@example.com", "wrongPass", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "wrongPass");
         doThrow(new BadCredentialsException("Bad credentials"))
                 .when(authenticationManager).authenticate(any());
 
@@ -221,7 +221,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login — response includes user roles")
     void login_responseContainsRoles() {
-        AuthRequest request = new AuthRequest("steve@example.com", "pass", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "pass");
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(testUser));
         when(jwtProvider.generateToken(any())).thenReturn("token");
         when(refreshTokenService.create(any())).thenReturn(buildRefreshToken("rt"));

@@ -60,3 +60,10 @@ logging:
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
     com.steve.secure_auth: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs

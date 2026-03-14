@@ -3,17 +3,16 @@ package com.steve.secure_auth.dto;
 public class AuthRequest {
     private String email;
     private String password;
-    private String otp; // optional, for MFA later
 
     // Default constructor
     public AuthRequest() {
     }
 
     // All-args constructor
-    public AuthRequest(String email, String password, String otp) {
+    public AuthRequest(String email, String password) {
         this.email = email;
         this.password = password;
-        this.otp = otp;
+
     }
 
     // Getters
@@ -27,10 +26,7 @@ public class AuthRequest {
         return password;
     }
 
-    public String getOtp() {
 
-        return otp;
-    }
 
     // Setters
     public void setEmail(String email) {
@@ -43,14 +39,11 @@ public class AuthRequest {
         this.password = password;
     }
 
-    public void setOtp(String otp) {
-        this.otp = otp;
-    }
 
 
     @Override
     public String toString() {
-        return "AuthRequest{email='" + email + "', otp='" + otp + "'}";
+        return "AuthRequest{email='" + email + "', otp='" + "'}";
 
     }
 }

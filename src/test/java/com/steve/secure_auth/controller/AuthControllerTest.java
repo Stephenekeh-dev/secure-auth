@@ -127,7 +127,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /login — returns 200 with tokens and user info")
     void login_validCredentials_returns200() throws Exception {
-        AuthRequest request = new AuthRequest("steve@example.com", "SecurePass123!", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "SecurePass123!");
 
         AuthenticationResponse response = AuthenticationResponse.builder()
                 .accessToken("access-token")
@@ -156,7 +156,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /login — returns 500 when credentials are wrong")
     void login_badCredentials_returns500() throws Exception {
-        AuthRequest request = new AuthRequest("steve@example.com", "wrongpass", null);
+        AuthRequest request = new AuthRequest("steve@example.com", "wrongpass");
         when(authService.login(any()))
                 .thenThrow(new UsernameNotFoundException("User not found"));
 
