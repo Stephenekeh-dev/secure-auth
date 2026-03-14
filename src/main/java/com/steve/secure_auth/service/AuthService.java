@@ -35,6 +35,13 @@ public class AuthService {
     private final JwtProvider jwtService;
     private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
+    private static final long PASSWORD_RESET_TTL_SECONDS = 30 * 60; // 30 minutes
+    private static final String PASSWORD_RESET_PREFIX = "pwd_reset:";
+
+    // Add to constructor parameters:
+    private final RedisService redisService;
+    private final S3Service s3Service;
+
 
     public AuthService(UserRepository userRepository,
                        RoleRepository roleRepository,
@@ -43,7 +50,8 @@ public class AuthService {
                        EmailService emailService,
                        JwtProvider jwtService,
                        RefreshTokenService refreshTokenService,
-                       AuthenticationManager authenticationManager) {
+                       AuthenticationManager authenticationManager,
+                       RedisService redisService, S3Service s3Service) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.verificationTokenRepository = verificationTokenRepository;
@@ -52,6 +60,8 @@ public class AuthService {
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.authenticationManager = authenticationManager;
+        this.redisService = redisService;
+        this.s3Service = s3Service;
     }
 
     @Transactional
@@ -62,8 +72,13 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setProfileImage(request.getProfileImage());
         user.setEnabled(false);
+
+        // Upload profile image to S3 if provided
+        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+            String imageUrl = s3Service.uploadFile(request.getProfileImage());
+            user.setProfileImage(imageUrl);
+        }
 
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("ROLE_USER not found"));
@@ -77,7 +92,6 @@ public class AuthService {
 
         emailService.sendVerificationEmail(user, token);
     }
-
     public AuthenticationResponse login(AuthRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -159,5 +173,35 @@ public class AuthService {
         userRepository.save(user);
 
         verificationTokenRepository.delete(verificationToken); //  one-time use — delete after success
+    }
+    public void forgotPassword(ForgotPasswordRequest request) {
+        // Always return success — never reveal if email exists (security)
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+            redisService.saveOtp(
+                    PASSWORD_RESET_PREFIX + token,
+                    user.getEmail(),
+                    PASSWORD_RESET_TTL_SECONDS
+            );
+            emailService.sendPasswordResetEmail(user, token);
+        });
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String key = PASSWORD_RESET_PREFIX + request.getToken();
+        String email = redisService.getOtp(key);
+
+        if (email == null) {
+            throw new IllegalArgumentException("Invalid or expired password reset token.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        redisService.deleteOtp(key); // one-time use — delete after success
     }
 }

@@ -7,6 +7,8 @@ import com.steve.secure_auth.model.VerificationToken;
 import com.steve.secure_auth.repository.UserRepository;
 import com.steve.secure_auth.repository.VerificationTokenRepository;
 import com.steve.secure_auth.service.AuthService;
+import com.steve.secure_auth.service.MfaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,13 +23,15 @@ public class AuthController {
 
     // Fields before constructor
     private final AuthService authService;
+    private final MfaService mfaService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;  // verifyEmail logic moved to AuthService
+    public AuthController(AuthService authService,MfaService mfaService) {
+        this.authService = authService;
+        this.mfaService= mfaService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    @PostMapping(value = "/register", consumes = "multipart/form-data")
+    public ResponseEntity<?> register(@ModelAttribute @Valid RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.ok(Map.of(
                 "message", "User registered successfully. Please check your email to verify your account."
@@ -54,7 +58,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @RequestParam(required = false) String refreshToken,
-            @RequestParam(required = false) String email,  // ✅ fallback for testing
+            @RequestParam(required = false) String email,  // fallback for testing
             Authentication authentication
     ) {
         String resolvedEmail = (authentication != null)
@@ -68,22 +72,30 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        return ResponseEntity.ok(Map.of("message", "If this email exists, a reset link has been sent."));
+    public ResponseEntity<?> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(Map.of(
+                "message", "If this email exists, a reset link has been sent."
+        ));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+        authService.resetPassword(request);
         return ResponseEntity.ok(Map.of("message", "Password reset successful"));
     }
-
     @GetMapping("/mfa/setup")
-    public ResponseEntity<MfaSetupResponse> mfaSetup() {
-        return ResponseEntity.ok(new MfaSetupResponse(null, null));
+    public ResponseEntity<MfaSetupResponse> mfaSetup(Authentication authentication) {
+        MfaService.MfaSetupResult result = mfaService.setup(authentication.getName());
+        return ResponseEntity.ok(new MfaSetupResponse(result.secret(), result.qrCodeUrl()));
     }
 
     @PostMapping("/mfa/verify")
-    public ResponseEntity<?> mfaVerify(@RequestBody MfaVerifyRequest req) {
-        return ResponseEntity.ok(Map.of("message", "MFA verified"));
+    public ResponseEntity<?> mfaVerify(
+            @RequestBody @Valid MfaVerifyRequest req,
+            Authentication authentication) {
+        mfaService.verify(authentication.getName(), req.getCode());
+        return ResponseEntity.ok(Map.of("message", "MFA enabled successfully"));
     }
+
 }

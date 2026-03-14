@@ -67,3 +67,10 @@ springdoc:
     operations-sorter: method
   api-docs:
     path: /v3/api-docs
+
+aws:
+  s3:
+    bucket-name: secure-auth-profile-images
+    region: us-east-1
+    access-key: your-access-key-here
+    secret-key: your-secret-key-here

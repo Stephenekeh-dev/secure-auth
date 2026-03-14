@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Data
@@ -27,7 +28,7 @@ public class RegisterRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
-    private String profileImage; // optional
+    private MultipartFile profileImage;
 
     // constructors, getters, setters unchanged...
 }

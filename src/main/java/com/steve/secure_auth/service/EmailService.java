@@ -43,4 +43,21 @@ public class EmailService {
         message.setText(text);
         mailSender.send(message);
     }
+    public void sendPasswordResetEmail(User user, String token) {
+        String subject = "Reset your password";
+        String resetUrl = baseUrl + "/api/auth/reset-password?token=" + token;
+
+        String message = "Hi " + user.getFirstname() + ",\n\n" +
+                "You requested a password reset. Click the link below to reset your password:\n" +
+                resetUrl + "\n\n" +
+                "This link expires in 30 minutes.\n\n" +
+                "If you did not request this, please ignore this email.\n\n" +
+                "Thank you!";
+
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(user.getEmail());
+        mailMessage.setSubject(subject);
+        mailMessage.setText(message);
+        mailSender.send(mailMessage);
+    }
 }
