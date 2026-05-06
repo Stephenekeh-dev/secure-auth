@@ -8,11 +8,14 @@ import com.steve.secure_auth.repository.UserRepository;
 import com.steve.secure_auth.repository.VerificationTokenRepository;
 import com.steve.secure_auth.service.AuthService;
 import com.steve.secure_auth.service.MfaService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.Map;
@@ -30,8 +33,10 @@ public class AuthController {
         this.mfaService= mfaService;
     }
 
-    @PostMapping(value = "/register", consumes = "multipart/form-data")
-    public ResponseEntity<?> register(@ModelAttribute @Valid RegisterRequest request) {
+    @Operation(summary = "Register a new user")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> register(
+            @ModelAttribute @Valid RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.ok(Map.of(
                 "message", "User registered successfully. Please check your email to verify your account."

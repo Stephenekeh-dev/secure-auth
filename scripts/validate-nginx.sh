@@ -7,17 +7,17 @@ echo "====================================="
 
 # Check file exists
 if [ ! -f "nginx/nginx.conf" ]; then
-    echo "❌ nginx/nginx.conf not found"
+    echo " nginx/nginx.conf not found"
     exit 1
 fi
-echo "✅ nginx/nginx.conf found"
+echo "nginx/nginx.conf found"
 
 # Check required directives
 check_directive() {
     if grep -q "$1" nginx/nginx.conf; then
-        echo "✅ Directive '$1' found"
+        echo "Directive '$1' found"
     else
-        echo "❌ Directive '$1' missing"
+        echo " Directive '$1' missing"
         exit 1
     fi
 }

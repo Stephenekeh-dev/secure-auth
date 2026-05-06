@@ -41,7 +41,7 @@ public class SecurityConfig {
         return provider;
     }
 
-    // ✅ AuthenticationManager bean now uses the AuthenticationProvider
+    // AuthenticationManager bean now uses the AuthenticationProvider
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

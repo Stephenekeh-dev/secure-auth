@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,7 +18,7 @@ public class SwaggerConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Secure Auth API")
+                        .title("Secure Authentication and Authorization API Deployed on AWS ECR, EC2, S3")
                         .description("JWT Authentication API with email verification, refresh tokens and MFA")
                         .version("1.0.0")
                         .contact(new Contact()
@@ -30,6 +31,21 @@ public class SwaggerConfig {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .description("Enter your JWT token")));
+    }
+
+    @Bean
+    public OpenApiCustomizer openApiCustomizer() {
+        return openApi -> openApi.getPaths().values().forEach(pathItem ->
+                pathItem.readOperations().forEach(operation -> {
+                    if (operation.getRequestBody() != null) {
+                        operation.getRequestBody().getContent().forEach((mediaType, content) -> {
+                            if (mediaType.equals("multipart/form-data") && content.getSchema() != null) {
+                                content.getSchema().getProperties();
+                            }
+                        });
+                    }
+                })
+        );
     }
 }
 

@@ -7,18 +7,18 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: secure-auth
-  EC2_HOST: ${{ secrets.EC2_HOST }}
+  ECR_REGISTRY: 420465597326.dkr.ecr.us-east-1.amazonaws.com
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # -----Checkout ---------
+      # ─── Checkout ──────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---- Configure AWS credentials -----
+      # ─── Configure AWS credentials ─────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -26,45 +26,50 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ------Login to ECR ------
+      # ─── Login to ECR ──────────────────────────────
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ------ Build and push Docker image ------
+      # ─── Build and push Docker image ───────────────
       - name: Build, tag and push image to ECR
         id: build-image
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          echo "image=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # ------ Deploy to EC2 ------
+      # ─── Deploy to EC2 ─────────────────────────────
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ECR_REGISTRY,ECR_REPOSITORY,AWS_REGION
           script: |
             # Login to ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
               docker login --username AWS --password-stdin \
-              ${{ steps.login-ecr.outputs.registry }}
+              ${{ env.ECR_REGISTRY }}
 
             # Pull latest image
-            docker pull ${{ steps.build-image.outputs.image }}
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
-            # Update image in compose
-            export APP_IMAGE=${{ steps.build-image.outputs.image }}
+            # Navigate to app directory
+            cd /home/ubuntu/secure-auth
+
+            # Set image for docker compose
+            export APP_IMAGE=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
             # Stop and restart containers
-            cd /home/ubuntu/secure-auth
             docker compose down
             docker compose up -d
 
             # Clean up old images
             docker image prune -f
+
+            # Verify containers are running
+            docker compose ps

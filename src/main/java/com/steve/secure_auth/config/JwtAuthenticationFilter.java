@@ -23,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService userDetailsService;
 
-    // ✅ Constructor injection — no @Autowired/@Lazy needed
+    // Constructor injection — no @Autowired/@Lazy needed
     public JwtAuthenticationFilter(JwtProvider jwtProvider,
                                    @Lazy CustomUserDetailsService userDetailsService) {
         this.jwtProvider = jwtProvider;

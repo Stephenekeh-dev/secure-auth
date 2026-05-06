@@ -161,7 +161,7 @@
 
 	<build>
 		<plugins>
-			<!-- ✅ Keep only this one -->
+			<!-- Keep only this one -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
